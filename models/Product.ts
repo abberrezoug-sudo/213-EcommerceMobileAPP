@@ -1,26 +1,99 @@
-import { Schema, model} from "mongoose"
-export interface Iproduct {
-    name: string;
-    description: string;
-    price: number;
-    images: string[];
-    category: string;
-    stock: number;
-    rating: number;
+import { Schema, model } from "mongoose";
+
+export interface IProductImage {
+  public_id: string;
+  secure_url: string;
 }
-const productSchema = new Schema<Iproduct>({
-    name:{ type: String, required: true },
-    description:{ type: String, required: true },
-    price:{ type: Number, required: true },
-images: {
-    type: [String],
-    required: true
-},
-    category:{ type: String, required: true },
-    stock:{ type: Number, required: true },
-    rating:{ type: Number, default: 0 }
-},{
+
+export interface IProduct {
+  name: string;
+  description: string;
+  price: number;
+  discount: number;
+  priceAfterDiscount: number;
+  images: IProductImage[];
+  category: string;
+  stock: number;
+  rating: number;
+}
+
+const productSchema = new Schema<IProduct>(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    description: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    discount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+
+    priceAfterDiscount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    images: {
+      type: [
+        {
+          public_id: {
+            type: String,
+            required: true,
+          },
+          secure_url: {
+            type: String,
+            required: true,
+          },
+        },
+      ],
+      default: [],
+    },
+
+    category: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    stock: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    rating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+  },
+  {
     timestamps: true,
-}
-)
-export default model<Iproduct>("Product", productSchema)
+  }
+);
+
+productSchema.pre("validate", function () {
+  const discount = this.discount || 0;
+  const discountedPrice = this.price - (this.price * discount) / 100;
+  this.priceAfterDiscount = Math.round(discountedPrice * 100) / 100;
+});
+
+export default model<IProduct>("Product", productSchema);
